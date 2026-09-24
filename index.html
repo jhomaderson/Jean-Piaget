@@ -282,12 +282,23 @@
     return texto.replace(/[*_#`]/g, '');
   }
 
+  function escolherMelhorVoz() {
+    const vozes = window.speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('pt'));
+    if (!vozes.length) return null;
+    // Prioriza pt-BR "de rede" (vozes do Google em nuvem, bem mais naturais que a local do aparelho).
+    return vozes.find(v => v.lang.toLowerCase() === 'pt-br' && !v.localService)
+      || vozes.find(v => v.lang.toLowerCase() === 'pt-br')
+      || vozes.find(v => !v.localService)
+      || vozes[0];
+  }
+
   function falar(texto) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(texto);
     utter.lang = 'pt-BR';
-    const vozPt = window.speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('pt'));
+    utter.rate = 0.95;
+    const vozPt = escolherMelhorVoz();
     if (vozPt) utter.voice = vozPt;
 
     ring.classList.remove('listening');
