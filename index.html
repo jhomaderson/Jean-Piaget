@@ -292,29 +292,54 @@
       || vozes[0];
   }
 
-  function falar(texto) {
-    if (!('speechSynthesis' in window)) return;
+  function falarComVozDoNavegador(texto, aoTerminar) {
+    if (!('speechSynthesis' in window)) {
+      aoTerminar();
+      return;
+    }
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(texto);
     utter.lang = 'pt-BR';
     utter.rate = 0.95;
     const vozPt = escolherMelhorVoz();
     if (vozPt) utter.voice = vozPt;
+    utter.onend = aoTerminar;
+    utter.onerror = aoTerminar;
+    window.speechSynthesis.speak(utter);
+  }
 
+  async function falar(texto) {
     ring.classList.remove('listening');
     ring.classList.add('speaking');
     let mouthInterval = setInterval(() => {
       mouth.setAttribute('ry', (Math.random() * 8 + 3).toFixed(1));
     }, 130);
 
-    utter.onend = () => {
+    function pararAnimacao() {
       clearInterval(mouthInterval);
       mouth.setAttribute('ry', '3.5');
       ring.classList.remove('speaking');
       setStatus('Segure o rosto para falar');
-    };
+    }
 
-    window.speechSynthesis.speak(utter);
+    try {
+      const resp = await fetch('/api/falar', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ texto }),
+      });
+      if (!resp.ok) throw new Error('audio indisponivel');
+
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => { pararAnimacao(); URL.revokeObjectURL(url); };
+      audio.onerror = () => { pararAnimacao(); URL.revokeObjectURL(url); };
+      await audio.play();
+    } catch (err) {
+      // Reserva: voz padrão do navegador, caso a voz de IA falhe ou não esteja configurada.
+      falarComVozDoNavegador(texto, pararAnimacao);
+    }
   }
 
   async function perguntar(pergunta) {

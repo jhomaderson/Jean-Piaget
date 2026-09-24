@@ -9,10 +9,14 @@ apresentação da faculdade.
 - `lib/piaget.js`: o "cérebro" — guarda a instrução que restringe o assistente
   a só falar sobre Piaget e faz a chamada pra IA (via Groq, que roda modelos
   abertos em hardware especializado pra responder bem rápido).
+- `lib/voz.js`: transforma o texto da resposta em áudio de verdade, com uma
+  voz de IA (via ElevenLabs). Se não estiver configurado, o app cai de volta
+  na voz padrão do navegador/Android automaticamente.
 - `server.js`: servidor pra rodar localmente (no seu notebook ou no tablet
   via Termux).
-- `api/perguntar.js`: a mesma lógica, empacotada como função gratuita na nuvem
-  (Vercel) — pra publicar o assistente na internet sem precisar de notebook.
+- `api/perguntar.js` e `api/falar.js`: a mesma lógica, empacotada como funções
+  gratuitas na nuvem (Vercel) — pra publicar o assistente na internet sem
+  precisar de notebook.
 - `index.html`: a tela — um "rosto" animado que ocupa a tela toda; segura o
   dedo nele pra falar, e um campo de texto escondido atrás do ícone de teclado
   (caso o microfone falhe).
@@ -32,6 +36,21 @@ limite de uso por minuto/dia, mas é de sobra para uma apresentação de faculda
 O catálogo de modelos disponíveis muda de vez em quando; se `GROQ_MODEL` parar
 de funcionar, veja a lista atual em https://console.groq.com/docs/models.
 
+### 1.1 (Opcional, mas recomendado) Pegue uma voz de IA grátis (ElevenLabs)
+
+Sem isso, o app já funciona — só usa a voz padrão do navegador/Android, que
+soa mais robótica. Com a ElevenLabs, a fala fica bem mais natural, e dá pra
+escolher o timbre da voz.
+
+1. Crie uma conta grátis em https://elevenlabs.io (não pede cartão pro plano
+   grátis).
+2. Vá em **Profile → API Keys** (ou o ícone de perfil no canto) e crie uma chave.
+3. (Opcional) Escolha outra voz em https://elevenlabs.io/app/voice-library —
+   clique nos "..." da voz escolhida e copie o **Voice ID**.
+
+O plano grátis tem um limite de caracteres por mês, mas é de sobra pra uma
+apresentação de faculdade.
+
 ### 2. Configure o projeto
 
 ```bash
@@ -40,7 +59,8 @@ npm install
 cp .env.example .env
 ```
 
-Abra o `.env` e cole sua chave em `GROQ_API_KEY`.
+Abra o `.env` e cole sua chave em `GROQ_API_KEY` (e, se tiver criado, sua
+chave da ElevenLabs em `ELEVENLABS_API_KEY`).
 
 ### 3. Rode o servidor
 
@@ -86,6 +106,8 @@ dar conflito.)
 3. Antes de clicar em Deploy, abra **Environment Variables** e adicione:
    - `GROQ_API_KEY` = sua chave do Groq
    - `GROQ_MODEL` = `openai/gpt-oss-120b` (opcional)
+   - `ELEVENLABS_API_KEY` = sua chave da ElevenLabs (opcional, pra voz de IA)
+   - `ELEVENLABS_VOICE_ID` = (opcional, se quiser trocar a voz)
 4. Clique em **Deploy**. Em cerca de 1 minuto você recebe um link
    `https://piaget-assistente-xxxx.vercel.app`.
 
