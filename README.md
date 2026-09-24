@@ -6,11 +6,16 @@ apresentação da faculdade.
 
 ## Como funciona
 
-- `server.js`: um servidorzinho que guarda sua chave de API em segredo e manda
-  cada pergunta para a IA (via Groq, que roda modelos abertos em hardware
-  especializado pra responder bem rápido), já instruída a só falar sobre Piaget.
-- `public/index.html`: a tela que fica no tablet — um "rosto" animado, botão de
-  microfone (fale a pergunta) e um campo de texto (caso o microfone falhe).
+- `lib/piaget.js`: o "cérebro" — guarda a instrução que restringe o assistente
+  a só falar sobre Piaget e faz a chamada pra IA (via Groq, que roda modelos
+  abertos em hardware especializado pra responder bem rápido).
+- `server.js`: servidor pra rodar localmente (no seu notebook ou no tablet
+  via Termux).
+- `api/perguntar.js`: a mesma lógica, empacotada como função gratuita na nuvem
+  (Vercel) — pra publicar o assistente na internet sem precisar de notebook.
+- `index.html`: a tela — um "rosto" animado que ocupa a tela toda; segura o
+  dedo nele pra falar, e um campo de texto escondido atrás do ícone de teclado
+  (caso o microfone falhe).
 
 ## Passo a passo
 
@@ -48,12 +53,52 @@ Isso sobe o assistente em `http://localhost:3000`.
 ## Onde rodar no dia da apresentação
 
 O microfone do navegador (Web Speech API) só funciona em um "contexto seguro":
-`localhost` ou uma página `https://`. Um endereço tipo `http://192.168.0.x:3000`
-(notebook acessado pelo tablet via Wi-Fi) **não deixa o microfone funcionar** —
-o campo de texto continua funcionando normalmente, mas para ter voz de verdade
-escolha uma das opções abaixo.
+`localhost` ou uma página `https://`. Por isso, publicar na internet (Opção A)
+é o jeito mais tranquilo: o link já vem em `https://` prontinho, e você não
+precisa nem levar o notebook.
 
-### Opção A — Rodar direto no tablet (mais simples e recomendada)
+### Opção A — Publicar de graça na internet (GitHub + Vercel), sem levar notebook
+
+O Vercel roda a parte da IA como uma função gratuita na nuvem (sua chave do
+Groq fica guardada lá em segredo, nunca aparece pro público) e te dá um link
+fixo tipo `https://piaget-assistente.vercel.app`, acessível do tablet em
+qualquer lugar com internet.
+
+**1. Suba o projeto pro GitHub** (crie uma conta grátis em github.com se ainda
+não tiver uma):
+
+```bash
+# dentro da pasta piaget-assistente
+git remote add origin https://github.com/SEU-USUARIO/piaget-assistente.git
+git branch -M main
+git push -u origin main
+```
+
+(Crie antes o repositório vazio em github.com/new, com o nome
+`piaget-assistente` — não marque nenhuma opção de "adicionar README" pra não
+dar conflito.)
+
+**2. Publique no Vercel:**
+
+1. Acesse https://vercel.com e crie uma conta grátis (dá pra entrar direto
+   com o GitHub, sem cartão de crédito).
+2. Clique em **Add New → Project** e importe o repositório `piaget-assistente`.
+3. Antes de clicar em Deploy, abra **Environment Variables** e adicione:
+   - `GROQ_API_KEY` = sua chave do Groq
+   - `GROQ_MODEL` = `openai/gpt-oss-120b` (opcional)
+4. Clique em **Deploy**. Em cerca de 1 minuto você recebe um link
+   `https://piaget-assistente-xxxx.vercel.app`.
+
+Abra esse link no Chrome do tablet e use normalmente — é o mesmo assistente,
+já em HTTPS, então o microfone funciona sem nenhuma configuração extra.
+
+Sempre que você editar o projeto e rodar `git push` de novo, o Vercel
+republica automaticamente.
+
+### Opção B — Rodar direto no tablet, sem internet (Termux)
+
+Se preferir não depender de internet no dia, dá pra rodar tudo local no
+próprio tablet:
 
 1. Instale o app **Termux** no tablet Android (Play Store ou F-Droid).
 2. Dentro do Termux:
@@ -66,22 +111,10 @@ escolha uma das opções abaixo.
    rode `npm start`.
 5. Abra o Chrome **no próprio tablet** em `http://localhost:3000`.
 
-Como é `localhost` no mesmo aparelho, o microfone funciona sem configuração extra.
-Deixe o Termux rodando em segundo plano durante a apresentação.
-
-### Opção B — Rodar no notebook e acessar do tablet pelo Wi-Fi
-
-Precisa de HTTPS. Jeito mais rápido: use um túnel como o `ngrok`.
-
-```bash
-npm start
-# em outro terminal:
-npx ngrok http 3000
-```
-
-O ngrok te dá um link `https://algumacoisa.ngrok-free.app`. Abra esse link no
-Chrome do tablet — o microfone vai funcionar normalmente. Precisa de internet
-tanto no notebook quanto no tablet.
+Como é `localhost` no mesmo aparelho, o microfone funciona sem configuração
+extra. Deixe o Termux rodando em segundo plano durante a apresentação. (Você
+ainda vai precisar de internet nesse momento, só pra chamar a IA — só não
+depende do notebook.)
 
 ## Deixando parecido com um tablet "de verdade" no rosto do boneco
 
@@ -95,7 +128,7 @@ tanto no notebook quanto no tablet.
 ## Ajustando o que ele sabe/responde
 
 O comportamento do assistente (só falar sobre Piaget, responder em 1ª pessoa,
-frases curtas para a fala) está todo no `SYSTEM_PROMPT` dentro de `server.js`.
+frases curtas para a fala) está todo no `SYSTEM_PROMPT` dentro de `lib/piaget.js`.
 Edite esse texto para mudar o tom, adicionar mais regras, ou focar em tópicos
 específicos do seu trabalho (por exemplo, dar mais peso aos estágios do
 desenvolvimento cognitivo se for isso que o professor vai cobrar).
