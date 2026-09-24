@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Assistente do Piaget</title>
+<style>
+  :root {
+    --bg: #14110f;
+    --bg-2: #1f1a15;
+    --ring: #d9a441;
+    --ring-dim: #7a5c22;
+    --text: #f3ead9;
+    --muted: #b7a98c;
+    --card: #241e18;
+    --danger: #c0554a;
+    --skin: #d9a876;
+    --skin-shadow: #bd8b5a;
+    --hair: #dcd7ca;
+    --hair-shadow: #b6b0a0;
+    --frame: #2c2016;
+    --pupil: #241a10;
+    --mustache: #e6dfd0;
+    --mouth-color: #7a3b34;
+    --jacket: #40331f;
+    --tie: #7a2e2e;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background: radial-gradient(circle at 50% 30%, var(--bg-2), var(--bg) 70%);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #app {
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+
+  #face-wrap {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 96vmin;
+    height: 96vmin;
+    border-radius: 50%;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+  #ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 6px solid var(--ring-dim);
+    pointer-events: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  #ring.listening {
+    border-color: var(--ring);
+    box-shadow: 0 0 60px 8px rgba(217, 164, 65, 0.45);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  #ring.speaking {
+    border-color: #6fae93;
+    box-shadow: 0 0 60px 8px rgba(111, 174, 147, 0.4);
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+
+  #face-svg {
+    width: 86%;
+    height: 86%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: blink 4.5s infinite;
+  }
+  @keyframes blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.1); }
+  }
+  #mouth {
+    transition: ry 0.09s ease;
+  }
+
+  #overlay-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 18px 18px 0;
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+  }
+  #keyboard-btn {
+    pointer-events: auto;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--ring-dim);
+    background: rgba(36, 30, 24, 0.75);
+    color: var(--text);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  #overlay-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(to top, rgba(0,0,0,0.55), transparent);
+    pointer-events: none;
+  }
+
+  #status {
+    min-height: 1.4em;
+    font-size: 1rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  #captions {
+    pointer-events: auto;
+    width: 100%;
+    max-width: 640px;
+    max-height: 24vh;
+    overflow-y: auto;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--text);
+    display: none;
+  }
+  #captions.visible {
+    display: block;
+  }
+  #captions .pergunta {
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+
+  #text-form {
+    pointer-events: auto;
+    display: none;
+    width: 100%;
+    max-width: 640px;
+    gap: 8px;
+  }
+  #text-form.visible {
+    display: flex;
+  }
+  #text-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--ring-dim);
+    background: var(--card);
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  #text-form button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    background: var(--ring-dim);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="face-wrap">
+    <div id="ring"></div>
+    <svg id="face-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+      <path d="M38 220 L76 163 L100 184 L124 163 L162 220 Z" fill="var(--jacket)"/>
+      <path d="M91 175 L100 182 L109 175 L109 193 L100 186 L91 193 Z" fill="var(--tie)"/>
+      <rect x="82" y="148" width="36" height="35" fill="var(--skin)"/>
+      <rect x="82" y="148" width="36" height="9" fill="var(--skin-shadow)"/>
+      <ellipse cx="40" cy="100" rx="9" ry="15" fill="var(--skin)"/>
+      <ellipse cx="160" cy="100" rx="9" ry="15" fill="var(--skin)"/>
+      <ellipse cx="100" cy="95" rx="55" ry="62" fill="var(--skin)"/>
+      <path d="M48 60 Q34 100 46 138 L55 135 Q44 100 55 62 Z" fill="var(--hair)"/>
+      <path d="M152 60 Q166 100 154 138 L145 135 Q156 100 145 62 Z" fill="var(--hair)"/>
+      <path d="M50 128 Q100 152 150 128 L148 140 Q100 160 52 140 Z" fill="var(--hair)"/>
+      <path d="M68 78 Q80 70 94 76" stroke="var(--hair-shadow)" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M106 76 Q120 70 132 78" stroke="var(--hair-shadow)" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <g id="eye-left" class="eye">
+        <ellipse cx="80" cy="92" rx="9" ry="7" fill="#fff9ec"/>
+        <circle cx="81" cy="93" r="3.6" fill="var(--pupil)"/>
+      </g>
+      <g id="eye-right" class="eye">
+        <ellipse cx="120" cy="92" rx="9" ry="7" fill="#fff9ec"/>
+        <circle cx="119" cy="93" r="3.6" fill="var(--pupil)"/>
+      </g>
+      <g stroke="var(--frame)" stroke-width="3" fill="none" stroke-linecap="round">
+        <circle cx="80" cy="92" r="15"/>
+        <circle cx="120" cy="92" r="15"/>
+        <line x1="95" y1="92" x2="105" y2="92"/>
+        <line x1="65" y1="88" x2="50" y2="80"/>
+        <line x1="135" y1="88" x2="150" y2="80"/>
+      </g>
+      <path d="M100 98 Q95 114 100 118 Q105 116 102 114" stroke="var(--skin-shadow)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M64 129 Q100 150 136 129 Q122 141 100 141 Q78 141 64 129 Z" fill="var(--mustache)"/>
+      <ellipse id="mouth" cx="100" cy="140" rx="13" ry="3.5" fill="var(--mouth-color)"/>
+    </svg>
+  </div>
+
+  <div id="overlay-top">
+    <button id="keyboard-btn" aria-label="Digitar pergunta">⌨</button>
+  </div>
+
+  <div id="overlay-bottom">
+    <div id="status">Segure o rosto para falar</div>
+    <div id="captions">
+      <div class="pergunta" id="pergunta-texto"></div>
+      <div id="resposta-texto"></div>
+    </div>
+    <form id="text-form">
+      <input id="text-input" type="text" placeholder="Digite sua pergunta..." autocomplete="off">
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  const faceWrap = document.getElementById('face-wrap');
+  const ring = document.getElementById('ring');
+  const mouth = document.getElementById('mouth');
+  const statusEl = document.getElementById('status');
+  const captionsEl = document.getElementById('captions');
+  const perguntaEl = document.getElementById('pergunta-texto');
+  const respostaEl = document.getElementById('resposta-texto');
+  const keyboardBtn = document.getElementById('keyboard-btn');
+  const textForm = document.getElementById('text-form');
+  const textInput = document.getElementById('text-input');
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let recognizing = false;
+
+  function setStatus(texto) {
+    statusEl.textContent = texto;
+  }
+
+  function limparMarkdown(texto) {
+    return texto.replace(/[*_#`]/g, '');
+  }
+
+  function falar(texto) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(texto);
+    utter.lang = 'pt-BR';
+    const vozPt = window.speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('pt'));
+    if (vozPt) utter.voice = vozPt;
+
+    ring.classList.remove('listening');
+    ring.classList.add('speaking');
+    let mouthInterval = setInterval(() => {
+      mouth.setAttribute('ry', (Math.random() * 8 + 3).toFixed(1));
+    }, 130);
+
+    utter.onend = () => {
+      clearInterval(mouthInterval);
+      mouth.setAttribute('ry', '3.5');
+      ring.classList.remove('speaking');
+      setStatus('Segure o rosto para falar');
+    };
+
+    window.speechSynthesis.speak(utter);
+  }
+
+  async function perguntar(pergunta) {
+    perguntaEl.textContent = '"' + pergunta + '"';
+    respostaEl.textContent = '...';
+    captionsEl.classList.add('visible');
+    setStatus('Pensando...');
+
+    try {
+      const resp = await fetch('/api/perguntar', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pergunta }),
+      });
+      const dados = await resp.json();
+
+      if (!resp.ok) {
+        const msg = dados && dados.erro ? dados.erro : 'Algo deu errado.';
+        respostaEl.textContent = msg;
+        setStatus('Segure o rosto para falar');
+        return;
+      }
+
+      const texto = limparMarkdown(dados.resposta || '');
+      respostaEl.textContent = texto;
+      setStatus('Respondendo...');
+      falar(texto);
+    } catch (err) {
+      respostaEl.textContent = 'Não consegui me conectar ao servidor.';
+      setStatus('Segure o rosto para falar');
+    }
+  }
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    let transcriptFinal = '';
+    let teveErro = false;
+
+    recognition.onstart = () => {
+      recognizing = true;
+      transcriptFinal = '';
+      teveErro = false;
+      ring.classList.add('listening');
+      captionsEl.classList.remove('visible');
+      setStatus('Ouvindo... solte para enviar');
+    };
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      let novoFinal = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const trecho = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          novoFinal += trecho;
+        } else {
+          interim += trecho;
+        }
+      }
+      transcriptFinal += novoFinal;
+      const mostrar = (transcriptFinal + interim).trim();
+      if (mostrar) {
+        perguntaEl.textContent = '"' + mostrar + '"';
+        captionsEl.classList.add('visible');
+      }
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setStatus('Sem permissão de microfone. Ative nas configurações do navegador.');
+        teveErro = true;
+      } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        setStatus('Não entendi. Segure o rosto e fale de novo.');
+        teveErro = true;
+      }
+      ring.classList.remove('listening');
+    };
+
+    recognition.onend = () => {
+      recognizing = false;
+      ring.classList.remove('listening');
+      const texto = transcriptFinal.trim();
+      if (texto) {
+        perguntar(texto);
+      } else if (!teveErro) {
+        setStatus('Segure o rosto para falar');
+      }
+    };
+
+    function iniciarEscuta() {
+      if (recognizing) return;
+      window.speechSynthesis.cancel();
+      try {
+        recognition.start();
+      } catch (e) {
+        // já iniciado, ignora
+      }
+    }
+
+    function pararEscuta() {
+      if (recognizing) {
+        recognition.stop();
+      }
+    }
+
+    faceWrap.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      iniciarEscuta();
+    });
+    faceWrap.addEventListener('pointerup', pararEscuta);
+    faceWrap.addEventListener('pointercancel', pararEscuta);
+    faceWrap.addEventListener('pointerleave', pararEscuta);
+    faceWrap.addEventListener('contextmenu', (e) => e.preventDefault());
+  } else {
+    setStatus('Reconhecimento de voz não suportado. Use o teclado.');
+    textForm.classList.add('visible');
+  }
+
+  keyboardBtn.addEventListener('click', () => {
+    textForm.classList.toggle('visible');
+    if (textForm.classList.contains('visible')) {
+      textInput.focus();
+    }
+  });
+
+  textForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const texto = textInput.value.trim();
+    if (!texto) return;
+    textInput.value = '';
+    perguntar(texto);
+  });
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {};
+  }
+})();
+</script>
+</body>
+</html>
