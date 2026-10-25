@@ -145,31 +145,6 @@
     text-align: center;
   }
 
-  #captions {
-    pointer-events: auto;
-    width: 100%;
-    max-width: 640px;
-    max-height: 24vh;
-    overflow-y: auto;
-    background: var(--card);
-    border-radius: 14px;
-    padding: 14px 18px;
-    font-size: 1.05rem;
-    line-height: 1.4;
-    text-align: center;
-    color: var(--text);
-    display: none;
-  }
-  #captions.visible {
-    display: block;
-  }
-  #captions .pergunta {
-    color: var(--muted);
-    font-style: italic;
-    margin-bottom: 6px;
-    font-size: 0.9rem;
-  }
-
   #text-form {
     pointer-events: auto;
     display: none;
@@ -243,10 +218,6 @@
 
   <div id="overlay-bottom">
     <div id="status">Segure o rosto para falar</div>
-    <div id="captions">
-      <div class="pergunta" id="pergunta-texto"></div>
-      <div id="resposta-texto"></div>
-    </div>
     <form id="text-form">
       <input id="text-input" type="text" placeholder="Digite sua pergunta..." autocomplete="off">
       <button type="submit">Enviar</button>
@@ -262,9 +233,6 @@
   const ring = document.getElementById('ring');
   const mouth = document.getElementById('mouth');
   const statusEl = document.getElementById('status');
-  const captionsEl = document.getElementById('captions');
-  const perguntaEl = document.getElementById('pergunta-texto');
-  const respostaEl = document.getElementById('resposta-texto');
   const keyboardBtn = document.getElementById('keyboard-btn');
   const textForm = document.getElementById('text-form');
   const textInput = document.getElementById('text-input');
@@ -392,9 +360,6 @@
   }
 
   async function perguntar(pergunta) {
-    perguntaEl.textContent = '"' + pergunta + '"';
-    respostaEl.textContent = '...';
-    captionsEl.classList.add('visible');
     setStatus('Pensando...');
 
     try {
@@ -406,19 +371,15 @@
       const dados = await resp.json();
 
       if (!resp.ok) {
-        const msg = dados && dados.erro ? dados.erro : 'Algo deu errado.';
-        respostaEl.textContent = msg;
-        setStatus('Segure o rosto para falar');
+        setStatus(dados && dados.erro ? dados.erro : 'Algo deu errado. Segure o rosto para tentar de novo.');
         return;
       }
 
       const texto = limparMarkdown(dados.resposta || '');
-      respostaEl.textContent = texto;
       setStatus('Respondendo...');
       falar(texto);
     } catch (err) {
-      respostaEl.textContent = 'Não consegui me conectar ao servidor.';
-      setStatus('Segure o rosto para falar');
+      setStatus('Não consegui me conectar ao servidor.');
     }
   }
 
@@ -436,7 +397,6 @@
       transcriptFinal = '';
       teveErro = false;
       ring.classList.add('listening');
-      captionsEl.classList.remove('visible');
       setStatus('Ouvindo... solte para enviar');
     };
 
@@ -454,8 +414,7 @@
       transcriptFinal += novoFinal;
       const mostrar = (transcriptFinal + interim).trim();
       if (mostrar) {
-        perguntaEl.textContent = '"' + mostrar + '"';
-        captionsEl.classList.add('visible');
+        setStatus('"' + mostrar + '"');
       }
     };
 
