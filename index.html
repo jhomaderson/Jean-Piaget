@@ -255,6 +255,8 @@
       <button type="submit">Enviar</button>
     </form>
   </div>
+
+  <audio id="audio-player" playsinline hidden></audio>
 </div>
 
 <script>
@@ -269,6 +271,22 @@
   const keyboardBtn = document.getElementById('keyboard-btn');
   const textForm = document.getElementById('text-form');
   const textInput = document.getElementById('text-input');
+  const player = document.getElementById('audio-player');
+
+  // Som silencioso de 1 amostra, só pra "destravar" o áudio no primeiro toque
+  // do usuário — alguns navegadores bloqueiam play() que não vem direto de um
+  // gesto, e nossa chamada real só acontece depois de buscar a resposta.
+  const SILENCIO_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAAA';
+  let audioDesbloqueado = false;
+  function desbloquearAudio() {
+    if (audioDesbloqueado) return;
+    audioDesbloqueado = true;
+    player.src = SILENCIO_WAV;
+    const p = player.play();
+    if (p && p.catch) p.catch(() => {});
+    player.pause();
+    player.currentTime = 0;
+  }
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
@@ -292,7 +310,22 @@
       || vozes[0];
   }
 
-  function falarComVozDoNavegador(texto, aoTerminar) {
+  let mouthInterval = null;
+  function iniciarBoca() {
+    if (mouthInterval) return;
+    mouthInterval = setInterval(() => {
+      mouth.setAttribute('ry', (Math.random() * 8 + 3).toFixed(1));
+    }, 130);
+  }
+  function pararBoca() {
+    if (mouthInterval) {
+      clearInterval(mouthInterval);
+      mouthInterval = null;
+    }
+    mouth.setAttribute('ry', '3.5');
+  }
+
+  function falarComVozDoNavegador(texto, aoComecar, aoTerminar) {
     if (!('speechSynthesis' in window)) {
       aoTerminar();
       return;
@@ -303,6 +336,7 @@
     utter.rate = 0.95;
     const vozPt = escolherMelhorVoz();
     if (vozPt) utter.voice = vozPt;
+    utter.onstart = aoComecar;
     utter.onend = aoTerminar;
     utter.onerror = aoTerminar;
     window.speechSynthesis.speak(utter);
@@ -311,15 +345,16 @@
   async function falar(texto) {
     ring.classList.remove('listening');
     ring.classList.add('speaking');
-    let mouthInterval = setInterval(() => {
-      mouth.setAttribute('ry', (Math.random() * 8 + 3).toFixed(1));
-    }, 130);
+    setStatus('Gerando voz...');
 
-    function pararAnimacao() {
-      clearInterval(mouthInterval);
-      mouth.setAttribute('ry', '3.5');
+    function finalizar() {
+      pararBoca();
       ring.classList.remove('speaking');
       setStatus('Segure o rosto para falar');
+    }
+    function comecouAFalar() {
+      setStatus('Respondendo...');
+      iniciarBoca();
     }
 
     try {
@@ -332,13 +367,14 @@
 
       const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => { pararAnimacao(); URL.revokeObjectURL(url); };
-      audio.onerror = () => { pararAnimacao(); URL.revokeObjectURL(url); };
-      await audio.play();
+      player.src = url;
+      player.onplaying = comecouAFalar;
+      player.onended = () => { finalizar(); URL.revokeObjectURL(url); };
+      player.onerror = () => { finalizar(); URL.revokeObjectURL(url); };
+      await player.play();
     } catch (err) {
       // Reserva: voz padrão do navegador, caso a voz de IA falhe ou não esteja configurada.
-      falarComVozDoNavegador(texto, pararAnimacao);
+      falarComVozDoNavegador(texto, comecouAFalar, finalizar);
     }
   }
 
@@ -434,6 +470,7 @@
 
     function iniciarEscuta() {
       if (recognizing) return;
+      desbloquearAudio();
       window.speechSynthesis.cancel();
       try {
         recognition.start();
@@ -470,6 +507,7 @@
 
   textForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    desbloquearAudio();
     const texto = textInput.value.trim();
     if (!texto) return;
     textInput.value = '';
