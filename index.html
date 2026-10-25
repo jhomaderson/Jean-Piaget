@@ -2,7 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#14110f">
+<link rel="manifest" href="/manifest.json">
 <title>Assistente do Piaget</title>
 <style>
   :root {
@@ -47,10 +49,6 @@
   #face-wrap {
     position: absolute;
     inset: 0;
-    margin: auto;
-    width: 96vmin;
-    height: 96vmin;
-    border-radius: 50%;
     background: var(--card);
     display: flex;
     align-items: center;
@@ -59,33 +57,33 @@
     touch-action: none;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
+    overflow: hidden;
   }
   #ring {
     position: absolute;
     inset: 0;
-    border-radius: 50%;
     border: 6px solid var(--ring-dim);
     pointer-events: none;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   #ring.listening {
     border-color: var(--ring);
-    box-shadow: 0 0 60px 8px rgba(217, 164, 65, 0.45);
+    box-shadow: inset 0 0 60px 8px rgba(217, 164, 65, 0.45);
     animation: pulse 1.2s ease-in-out infinite;
   }
   #ring.speaking {
     border-color: #6fae93;
-    box-shadow: 0 0 60px 8px rgba(111, 174, 147, 0.4);
+    box-shadow: inset 0 0 60px 8px rgba(111, 174, 147, 0.4);
   }
   @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
   }
 
   #face-svg {
-    width: 86%;
-    height: 86%;
-    overflow: visible;
+    width: 100%;
+    height: 100%;
+    display: block;
     pointer-events: none;
   }
   .eye {
@@ -206,37 +204,36 @@
 <div id="app">
   <div id="face-wrap">
     <div id="ring"></div>
-    <svg id="face-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-      <path d="M38 220 L76 163 L100 184 L124 163 L162 220 Z" fill="var(--jacket)"/>
-      <path d="M91 175 L100 182 L109 175 L109 193 L100 186 L91 193 Z" fill="var(--tie)"/>
-      <rect x="82" y="148" width="36" height="35" fill="var(--skin)"/>
-      <rect x="82" y="148" width="36" height="9" fill="var(--skin-shadow)"/>
-      <ellipse cx="40" cy="100" rx="9" ry="15" fill="var(--skin)"/>
-      <ellipse cx="160" cy="100" rx="9" ry="15" fill="var(--skin)"/>
-      <ellipse cx="100" cy="95" rx="55" ry="62" fill="var(--skin)"/>
-      <path d="M48 60 Q34 100 46 138 L55 135 Q44 100 55 62 Z" fill="var(--hair)"/>
-      <path d="M152 60 Q166 100 154 138 L145 135 Q156 100 145 62 Z" fill="var(--hair)"/>
-      <path d="M50 128 Q100 152 150 128 L148 140 Q100 160 52 140 Z" fill="var(--hair)"/>
-      <path d="M68 78 Q80 70 94 76" stroke="var(--hair-shadow)" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <path d="M106 76 Q120 70 132 78" stroke="var(--hair-shadow)" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <g id="eye-left" class="eye">
-        <ellipse cx="80" cy="92" rx="9" ry="7" fill="#fff9ec"/>
-        <circle cx="81" cy="93" r="3.6" fill="var(--pupil)"/>
+    <svg id="face-svg" viewBox="0 0 200 320" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="200" height="320" fill="var(--skin)"/>
+      <g transform="translate(100,160) scale(2.3) translate(-100,-95)">
+        <ellipse cx="40" cy="100" rx="9" ry="15" fill="var(--skin)"/>
+        <ellipse cx="160" cy="100" rx="9" ry="15" fill="var(--skin)"/>
+        <ellipse cx="100" cy="95" rx="55" ry="62" fill="var(--skin)"/>
+        <path d="M48 60 Q34 100 46 138 L55 135 Q44 100 55 62 Z" fill="var(--hair)"/>
+        <path d="M152 60 Q166 100 154 138 L145 135 Q156 100 145 62 Z" fill="var(--hair)"/>
+        <path d="M50 128 Q100 152 150 128 L148 140 Q100 160 52 140 Z" fill="var(--hair)"/>
+        <path d="M68 78 Q80 70 94 76" stroke="var(--hair-shadow)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M106 76 Q120 70 132 78" stroke="var(--hair-shadow)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <g id="eye-left" class="eye">
+          <ellipse cx="80" cy="92" rx="9" ry="7" fill="#fff9ec"/>
+          <circle cx="81" cy="93" r="3.6" fill="var(--pupil)"/>
+        </g>
+        <g id="eye-right" class="eye">
+          <ellipse cx="120" cy="92" rx="9" ry="7" fill="#fff9ec"/>
+          <circle cx="119" cy="93" r="3.6" fill="var(--pupil)"/>
+        </g>
+        <g stroke="var(--frame)" stroke-width="3" fill="none" stroke-linecap="round">
+          <circle cx="80" cy="92" r="15"/>
+          <circle cx="120" cy="92" r="15"/>
+          <line x1="95" y1="92" x2="105" y2="92"/>
+          <line x1="65" y1="88" x2="50" y2="80"/>
+          <line x1="135" y1="88" x2="150" y2="80"/>
+        </g>
+        <path d="M100 98 Q95 114 100 118 Q105 116 102 114" stroke="var(--skin-shadow)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M64 129 Q100 150 136 129 Q122 141 100 141 Q78 141 64 129 Z" fill="var(--mustache)"/>
+        <ellipse id="mouth" cx="100" cy="140" rx="13" ry="3.5" fill="var(--mouth-color)"/>
       </g>
-      <g id="eye-right" class="eye">
-        <ellipse cx="120" cy="92" rx="9" ry="7" fill="#fff9ec"/>
-        <circle cx="119" cy="93" r="3.6" fill="var(--pupil)"/>
-      </g>
-      <g stroke="var(--frame)" stroke-width="3" fill="none" stroke-linecap="round">
-        <circle cx="80" cy="92" r="15"/>
-        <circle cx="120" cy="92" r="15"/>
-        <line x1="95" y1="92" x2="105" y2="92"/>
-        <line x1="65" y1="88" x2="50" y2="80"/>
-        <line x1="135" y1="88" x2="150" y2="80"/>
-      </g>
-      <path d="M100 98 Q95 114 100 118 Q105 116 102 114" stroke="var(--skin-shadow)" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M64 129 Q100 150 136 129 Q122 141 100 141 Q78 141 64 129 Z" fill="var(--mustache)"/>
-      <ellipse id="mouth" cx="100" cy="140" rx="13" ry="3.5" fill="var(--mouth-color)"/>
     </svg>
   </div>
 
@@ -286,6 +283,22 @@
     if (p && p.catch) p.catch(() => {});
     player.pause();
     player.currentTime = 0;
+    pedirTelaCheia();
+  }
+
+  // Esconde a barra de endereço e as barras do sistema Android, pra usar a
+  // tela toda do tablet como se fosse o rosto do boneco. Só funciona a
+  // partir de um toque real do usuário, por isso fica junto do desbloqueio
+  // de áudio (chamado no primeiro toque).
+  function pedirTelaCheia() {
+    if (document.fullscreenElement) return;
+    const el = document.documentElement;
+    try {
+      const p = el.requestFullscreen ? el.requestFullscreen() : (el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {
+      // sem suporte, ignora
+    }
   }
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

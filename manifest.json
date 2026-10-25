@@ -1,0 +1,9 @@
+{
+  "name": "Assistente do Piaget",
+  "short_name": "Piaget",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#14110f",
+  "theme_color": "#14110f"
+}

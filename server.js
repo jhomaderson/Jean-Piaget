@@ -13,6 +13,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/manifest.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'manifest.json'));
+});
+
 app.post('/api/perguntar', async (req, res) => {
   const resultado = await responderPergunta(req.body && req.body.pergunta);
 
