@@ -447,7 +447,9 @@
       try {
         recognition.start();
       } catch (e) {
-        // já iniciado, ignora
+        if (e && e.name !== 'InvalidStateError') {
+          setStatus('Não consegui ligar o microfone (' + (e.name || e.message || 'erro') + '). Tente de novo.');
+        }
       }
     }
 
